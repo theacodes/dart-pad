@@ -46,10 +46,8 @@ class NewEmbed {
   TabView editorTabView;
   TabView testTabView;
   TabView solutionTabView;
-  ConsoleTabView consoleTabView;
+  ConsoleTabView consoleView;
   DElement solutionTab;
-
-  Counter unreadConsoleCounter;
 
   FlashBox testResultBox;
   FlashBox hintBox;
@@ -75,12 +73,11 @@ class NewEmbed {
   NewEmbed() {
     _initHostListener();
     tabController = NewEmbedTabController();
-    for (String name in ['editor', 'test', 'console', 'solution']) {
+    for (String name in ['editor', 'test', 'solution']) {
       tabController.registerTab(
         TabElement(querySelector('#$name-tab'), name: name, onSelect: () {
           editorTabView.setSelected(name == 'editor');
           testTabView.setSelected(name == 'test');
-          consoleTabView.setSelected(name == 'console');
           solutionTabView.setSelected(name == 'solution');
 
           if (name == 'editor') {
@@ -92,9 +89,6 @@ class NewEmbed {
           } else if (name == 'solution') {
             solutionEditor.resize();
             solutionEditor.focus();
-          } else {
-            // Must be the console tab.
-            unreadConsoleCounter.clear();
           }
         }),
       );
@@ -103,8 +97,6 @@ class NewEmbed {
     solutionTab = DElement(querySelector('#solution-tab'));
 
     navBarElement = DElement(querySelector('#navbar'));
-
-    unreadConsoleCounter = Counter(querySelector('#unread-console-counter'));
 
     executeButton =
         DisableableButton(querySelector('#execute'), _handleExecute);
@@ -166,24 +158,20 @@ class NewEmbed {
 
     solutionTabView = TabView(DElement(querySelector('#solution-view')));
 
-    consoleTabView = ConsoleTabView(DElement(querySelector('#console-view')));
+    print('console-view = ${querySelector('#console-view')}');
+    consoleView = ConsoleTabView(DElement(querySelector('#console-view')));
+    print('consoleView = ${consoleView}');
 
     executionSvc = ExecutionServiceIFrame(querySelector('#frame'))
       ..frameSrc =
           isDarkMode ? '../scripts/frame_dark.html' : '../scripts/frame.html';
 
     executionSvc.onStderr.listen((err) {
-      if (tabController.selectedTab.name != 'console') {
-        unreadConsoleCounter.increment();
-      }
-      consoleTabView.appendError(err);
+      consoleView.appendError(err);
     });
 
     executionSvc.onStdout.listen((msg) {
-      if (tabController.selectedTab.name != 'console') {
-        unreadConsoleCounter.increment();
-      }
-      consoleTabView.appendMessage(msg);
+      consoleView.appendMessage(msg);
     });
 
     executionSvc.testResults.listen((result) {
@@ -271,24 +259,29 @@ class NewEmbed {
 
     document.onKeyUp.listen(_handleAutoCompletion);
 
+    List splitterElements;
     if (supportsFlutterWeb) {
       var webOutput = querySelector('#web-output');
       var userCodeEditor = querySelector('#user-code-editor');
-      // Make the web output area visible.
       webOutput.removeAttribute('hidden');
-
-      var splitterElements = [userCodeEditor, webOutput];
-
-      splitter = flexSplit(
-        splitterElements,
-        horizontal: true,
-        gutterSize: defaultSplitterWidth,
-        // set initial sizes (in percentages)
-        sizes: [initialSplitPercent, (100 - initialSplitPercent)],
-        // set the minimum sizes (in pixels)
-        minSize: [100, 100],
-      );
+      splitterElements = [userCodeEditor, webOutput];
+    } else {
+      var userCodeEditor = querySelector('#user-code-editor');
+      var consoleView = querySelector('#console-view');
+      consoleView.removeAttribute('hidden');
+      splitterElements = [userCodeEditor, consoleView];
     }
+    print("splitterElements = ${splitterElements}");
+
+    splitter = flexSplit(
+      splitterElements,
+      horizontal: true,
+      gutterSize: defaultSplitterWidth,
+      // set initial sizes (in percentages)
+      sizes: [initialSplitPercent, (100 - initialSplitPercent)],
+      // set the minimum sizes (in pixels)
+      minSize: [100, 100],
+    );
 
     if (gistId.isNotEmpty) {
       _loadAndShowGist(gistId, analyze: false);
@@ -331,8 +324,7 @@ class NewEmbed {
     editorIsBusy = true;
     testResultBox.hide();
     hintBox.hide();
-    consoleTabView.clear();
-    unreadConsoleCounter.clear();
+    consoleView.clear();
 
     final fullCode = '${context.dartSource}\n${context.testMethod}\n'
         '${executionSvc.testResultDecoration}';
@@ -351,7 +343,7 @@ class NewEmbed {
           modulesBaseUrl: response.modulesBaseUrl,
         );
       }).catchError((e, st) {
-        consoleTabView.appendError('Error compiling to JavaScript:\n$e');
+        consoleView.appendError('Error compiling to JavaScript:\n$e');
         print(st);
         tabController.selectTab('console');
       }).whenComplete(() {
@@ -364,7 +356,7 @@ class NewEmbed {
           .then((CompileResponse response) {
         executionSvc.execute('', '', response.result);
       }).catchError((e, st) {
-        consoleTabView.appendError('Error compiling to JavaScript:\n$e');
+        consoleView.appendError('Error compiling to JavaScript:\n$e');
         print(st);
         tabController.selectTab('console');
       }).whenComplete(() {
@@ -543,13 +535,20 @@ class TabView {
 }
 
 class ConsoleTabView extends TabView {
-  ConsoleTabView(DElement element) : super(element);
+  ConsoleTabView(DElement element) : super(element) {
+    clear();
+  }
 
   void clear() {
     element.text = '';
+    var label = DivElement()..text = 'Console'..classes.add('console-label');
+    element.add(label);
   }
 
   void appendMessage(String msg) {
+    if (msg == null) {
+      return;
+    }
     final line = DivElement()..text = filterCloudUrls(msg);
     element.add(line);
   }
