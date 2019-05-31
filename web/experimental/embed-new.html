@@ -59,16 +59,27 @@ BSD-style license that can be found in the LICENSE file. -->
     <nav class="tabnav-tabs">
         <button id="editor-tab" class="tabnav-tab selected" selected>Your code</button>
         <button id="solution-tab" class="tabnav-tab" hidden>Solution</button>
-        <button id="test-tab" class="tabnav-tab">Test code</button>
+        <button id="test-tab" class="tabnav-tab" hidden>Test code</button>
     </nav>
     <div class="nav-buttons">
-        <button id="show-hint" class="btn mr-1">Hint</button>
+        <button id="show-hint" class="btn mr-2">Hint</button>
         <button id="format-code" class="btn mr-2">Format</button>
         <button id="reload-gist" class="btn mr-2">Reset</button>
-        <button id="execute" class="btn btn-primary float-right">
+        <button id="execute" class="btn mr-2 btn-primary float-right">
             <div class="octicon medium-octicon octicon-triangle-right"></div>
             Run
         </button>
+        <div class="position-relative text-right pr-2">
+            <button id="more-button" class="btn">
+                <div class="octicon medium-octicon octicon-three-bars"></div>
+            </button>
+            <div id="more-popover" class="Popover right-0 position-absolute" hidden>
+                <div class="Popover-message Popover-message--top-right text-left p-4 mt-2 Box box-shadow-large">
+                    <input id="show-test-checkbox" type="checkbox" name="Show Test Code"/>
+                    <label for="show-test-checkbox">Show Test Code</label>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 <section id="tab-container" class="flex-auto d-flex flex-column no-overflow">

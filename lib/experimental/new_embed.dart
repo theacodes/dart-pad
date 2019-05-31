@@ -40,6 +40,7 @@ class NewEmbed {
   DisableableButton reloadGistButton;
   DisableableButton formatButton;
   DisableableButton showHintButton;
+  DisableableButton moreButton;
 
   DElement navBarElement;
   NewEmbedTabController tabController;
@@ -48,6 +49,10 @@ class NewEmbed {
   TabView solutionTabView;
   ConsoleTabView consoleView;
   DElement solutionTab;
+  DElement morePopover;
+  DInput showTestCodeCheckbox;
+  bool _showTestCode = false;
+  bool _popoverHidden = true;
 
   FlashBox testResultBox;
   FlashBox hintBox;
@@ -119,6 +124,19 @@ class NewEmbed {
       });
       var hintElement = DivElement()..text = context.hint;
       hintBox.showElements([hintElement, showSolutionButton]);
+    });
+
+    tabController.setTabVisibility('test', false);
+    showTestCodeCheckbox = DInput(querySelector('#show-test-checkbox'));
+    showTestCodeCheckbox.onClick.listen((e) {
+      _showTestCode = !_showTestCode;
+      tabController.setTabVisibility('test', _showTestCode);
+    });
+
+    morePopover = DElement(querySelector('#more-popover'));
+    moreButton = DisableableButton(querySelector('#more-button'), () {
+      _popoverHidden = !_popoverHidden;
+      morePopover.toggleAttr('hidden', _popoverHidden);
     });
 
     formatButton = DisableableButton(
@@ -311,7 +329,8 @@ class NewEmbed {
     context.testMethod = gist.getFile('test.dart')?.content ?? '';
     context.solution = gist.getFile('solution.dart')?.content ?? '';
     context.hint = gist.getFile('hint.txt')?.content ?? '';
-    tabController.setTabVisibility('test', context.testMethod.isNotEmpty);
+    tabController.setTabVisibility(
+        'test', context.testMethod.isNotEmpty && _showTestCode);
     showHintButton.hidden = context.hint.isEmpty && context.testMethod.isEmpty;
     editorIsBusy = false;
 
@@ -541,7 +560,9 @@ class ConsoleTabView extends TabView {
 
   void clear() {
     element.text = '';
-    var label = DivElement()..text = 'Console'..classes.add('console-label');
+    var label = DivElement()
+      ..text = 'Console'
+      ..classes.add('console-label');
     element.add(label);
   }
 
