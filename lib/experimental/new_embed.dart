@@ -725,14 +725,14 @@ class AnalysisResultsController {
   DElement flash;
   DElement message;
   DElement toggle;
-  bool _flashHidden = true;
+  bool _flashHidden = false;
 
   final StreamController<AnalysisIssue> _onClickController =
       StreamController.broadcast();
   Stream<AnalysisIssue> get onIssueClick => _onClickController.stream;
 
   AnalysisResultsController(this.flash, this.message, this.toggle) {
-    hideFlash();
+    showFlash();
     message.text = _noIssuesMsg;
     toggle.onClick.listen((_) {
       if (_flashHidden) {
