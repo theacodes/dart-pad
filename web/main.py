@@ -3,6 +3,9 @@ from google.appengine.ext import ndb
 import os
 import webapp2
 
+SERVING_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
+
+
 class WhiteListEntry(ndb.Model):
     emailAddress = ndb.StringProperty()
 
@@ -72,6 +75,13 @@ def isDevelopment():
 
 # Serve the files.
 def _serve(resp, path):
+    # Normalize and restrict the path to only files under this directory.
+    path = os.path.abspath(path)
+
+    if not path.startswith(SERVING_DIRECTORY):
+        resp.status = 404
+        resp.write("<html><h1>404: Not found</h1></html>")
+        return
 
     if not os.path.isfile(path):
         resp.status = 404
