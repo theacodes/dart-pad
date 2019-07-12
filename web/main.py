@@ -1,3 +1,4 @@
+import logging
 from urlparse import urlparse
 from google.appengine.ext import ndb
 import os
@@ -79,6 +80,11 @@ def _serve(resp, path):
     path = os.path.abspath(path)
 
     if not path.startswith(SERVING_DIRECTORY):
+        logging.warning(
+            "Rejecting file outside of serving directory. "
+            "Serving directory: %s, requested path: %s",
+            SERVING_DIRECTORY, path)
+
         resp.status = 404
         resp.write("<html><h1>404: Not found</h1></html>")
         return
